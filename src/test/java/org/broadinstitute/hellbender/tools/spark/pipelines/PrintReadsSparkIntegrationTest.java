@@ -97,8 +97,8 @@ public final class PrintReadsSparkIntegrationTest extends AbstractPrintReadsInte
             // run PrintReadsSpark and print the contents of the HDFS cram test file to an output HDFS cram
             final GATKPathSpecifier outputHDFSPath = new GATKPathSpecifier(workingDirectory + "testCramOnHDFSOut.cram");
             final ArgumentsBuilder argBuilder = new ArgumentsBuilder();
-            argBuilder.add("input", cramHDFSPath.toUri().toString())
-                    .add("output", outputHDFSPath.getURI().toString())
+            argBuilder.addInput(cramHDFSPath.toUri().toString())
+                    .addOutput( outputHDFSPath.getURI().toString())
                     .addReference(refHDFSPath.toUri().toString());
             runCommandLine(argBuilder);
 

@@ -2,12 +2,10 @@ package org.broadinstitute.hellbender.tools.spark.pipelines;
 
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SBIIndex;
-import htsjdk.samtools.SBIIndexMerger;
-import htsjdk.samtools.SBIIndexWriter;
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
-import org.broadinstitute.hellbender.engine.GATKTool;
-import org.broadinstitute.hellbender.engine.ReadsDataSource;
+import org.broadinstitute.hellbender.engine.ReadsDataSourceInterface;
+import org.broadinstitute.hellbender.engine.ReadsPathDataSource;
 import org.broadinstitute.hellbender.engine.spark.GATKSparkTool;
 import org.broadinstitute.hellbender.testutils.ArgumentsBuilder;
 import org.broadinstitute.hellbender.testutils.SamAssertionUtils;
@@ -30,7 +28,7 @@ public final class PrintReadsSparkIntegrationTest extends AbstractPrintReadsInte
         // This is a technically incorrectly sam with a header indicating that it is coordinate sorted when it is actually
         // queryname sorted. If the ordering is the same after PrintReadsSpark then it means we aren't automatically sorting the output.
         final File inBam = new File(getTestDataDir(), "print_reads.mismatchedHeader.sam");
-        try (ReadsDataSource ds = new ReadsDataSource(inBam.toPath())){
+        try (ReadsDataSourceInterface ds = new ReadsPathDataSource(inBam.toPath())){
             Assert.assertEquals(ds.getHeader().getSortOrder(), SAMFileHeader.SortOrder.coordinate);
         }
         final File outBam = GATKBaseTest.createTempFile("print_reads", ".bam");

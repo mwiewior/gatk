@@ -43,7 +43,7 @@ public class ReadThreadingGraph extends BaseGraph<MultiDeBruijnVertex, MultiSamp
 
     private static final int MAX_CIGAR_COMPLEXITY = 3;
     private static final long serialVersionUID = 1l;
-    private int minMachingBasesToDanglngEndRecovery = 3;
+    private int minMatchingBasesToDanglngEndRecovery = 3;
 
     private boolean alreadyBuilt;
 
@@ -107,11 +107,6 @@ public class ReadThreadingGraph extends BaseGraph<MultiDeBruijnVertex, MultiSamp
     protected void setAlreadyBuilt() {
         alreadyBuilt = true;
     }
-
-//    @VisibleForTesting
-//    void setMaxMismatchesInDanglingHead(final int maxMismatchesInDanglingHead) {
-//        this.maxMismatchesInDanglingHead = maxMismatchesInDanglingHead;
-//    }
 
     /**
      * Return the collection of outgoing vertices that expand this vertex with a particular base.
@@ -669,7 +664,7 @@ public class ReadThreadingGraph extends BaseGraph<MultiDeBruijnVertex, MultiSamp
     @VisibleForTesting
     static int longestSuffixMatch(final byte[] seq, final byte[] kmer, final int seqStart) {
         for ( int len = 1; len <= kmer.length; len++ ) {
-            final int seqI = seqStart - len + 1;
+            final int seqI = seqStart - len + 1;getMinMatchingBases()
             final int kmerI = kmer.length - len;
             if ( seqI < 0 || seq[seqI] != kmer[kmerI] ) {
                 return len - 1;
@@ -691,23 +686,23 @@ public class ReadThreadingGraph extends BaseGraph<MultiDeBruijnVertex, MultiSamp
         final CigarElement firstElement = elements.get(0);
         Utils.validateArg( firstElement.getOperator() == CigarOperator.M, "The first Cigar element must be an M");
 
-        final Pair<Integer, Integer> indexesToMerge = bestPrefixMatch(elements, danglingHeadMergeResult.referencePathString, danglingHeadMergeResult.danglingPathString);
-        if ( indexesToMerge.getKey() <= 0 ||  indexesToMerge.getValue() <= 0 ) {
+        final Pair<Integer, Integer> refAndDanglingMergeIndices = bestPrefixMatch(elements, danglingHeadMergeResult.referencePathString, danglingHeadMergeResult.danglingPathString);
+        if ( refAndDanglingMergeIndices.getKey() <= 0 ||  refAndDanglingMergeIndices.getValue() <= 0 ) {
             return 0;
         }
 
         // we can't push back the reference path
-        if ( indexesToMerge.getKey() >= danglingHeadMergeResult.referencePath.size() - 1 ) {
+        if ( refAndDanglingMergeIndices.getKey() >= danglingHeadMergeResult.referencePath.size() - 1 ) {
             return 0;
         }
 
         // but we can manipulate the dangling path if we need to
-        if ( indexesToMerge.getValue() >= danglingHeadMergeResult.danglingPath.size() &&
-                ! extendDanglingPathAgainstReference(danglingHeadMergeResult, indexesToMerge.getValue() - danglingHeadMergeResult.danglingPath.size() + 2) ) {
+        if ( refAndDanglingMergeIndices.getValue() >= danglingHeadMergeResult.danglingPath.size() &&
+                ! extendDanglingPathAgainstReference(danglingHeadMergeResult, refAndDanglingMergeIndices.getValue() - danglingHeadMergeResult.danglingPath.size() + 2) ) {
             return 0;
         }
 
-        addEdge(danglingHeadMergeResult.referencePath.get(indexesToMerge.getKey()), danglingHeadMergeResult.danglingPath.get(indexesToMerge.getValue()), ((MyEdgeFactory)getEdgeFactory()).createEdge(false, 1));
+        addEdge(danglingHeadMergeResult.referencePath.get(refAndDanglingMergeIndices.getKey()), danglingHeadMergeResult.danglingPath.get(refAndDanglingMergeIndices.getValue()), ((MyEdgeFactory)getEdgeFactory()).createEdge(false, 1));
 
         return 1;
     }
@@ -919,7 +914,7 @@ public class ReadThreadingGraph extends BaseGraph<MultiDeBruijnVertex, MultiSamp
     /**
      * Finds the index of the best extent of the prefix match between the provided paths, for dangling head merging.
      * Requires that at a minimum there are at least #getMinMatchingBases() matches between the reference and the read
-     * at the end in order to emit an alignmet offset.
+     * at the end in order to emit an alignment offset.
      *
      * @param cigarElements cigar elements corresponding to the alignment between path1 and path2
      * @param path1  the first path
@@ -927,7 +922,7 @@ public class ReadThreadingGraph extends BaseGraph<MultiDeBruijnVertex, MultiSamp
      * @return an integer pair object where the key is the offset into path1 and the value is offset into path2 (both -1 if no path is found)
      */
     private Pair<Integer, Integer> bestPrefixMatch(final List<CigarElement> cigarElements, final byte[] path1, final byte[] path2) {
-        final int getMinMatchingBases = getMinMatchingBases();
+        final int minMatchingBases = getMinMatchingBases();
         int matchesSinceLastMismatch = 0;
         int refIndex = 0, readIdx = 0;
         int bestRefIndex = 0, bestReadIdx = 0;
@@ -973,29 +968,18 @@ public class ReadThreadingGraph extends BaseGraph<MultiDeBruijnVertex, MultiSamp
                     throw new GATKException("The " + ce.getOperator() + " cigar element is not currently supported");
             }
         }
-        if (matchesSinceLastMismatch >= getMinMatchingBases) {
+        if (matchesSinceLastMismatch >= minMatchingBases) {
             return Pair.of(bestRefIndex, bestReadIdx);
         } else {
             return Pair.of(-1, -1);
         }
     }
 
-//    /**
-//     * Determine the maximum number of mismatches permitted on the branch.
-//     * Unless it's preset (e.g. by unit tests) it should be the length of the branch divided by the kmer size.
-//     *
-//     * @param lengthOfDanglingBranch  the length of the branch itself
-//     * @return positive integer
-//     */
-//    private int getMaxMismatches(final int lengthOfDanglingBranch) {
-//        return maxMismatchesInDanglingHead > 0 ? maxMismatchesInDanglingHead : Math.max(1, (lengthOfDanglingBranch / kmerSize));
-//    }
-
     /**
-     * Determine the minimum number of matches to be considered allowable for recovering dangling ends
+     * The minimum number of matches to be considered allowable for recovering dangling ends
      */
     private int getMinMatchingBases() {
-        return minMachingBasesToDanglngEndRecovery;
+        return minMatchingBasesToDanglngEndRecovery;
     }
 
     private boolean extendDanglingPathAgainstReference(final DanglingChainMergeHelper danglingHeadMergeResult, final int numNodesToExtend) {

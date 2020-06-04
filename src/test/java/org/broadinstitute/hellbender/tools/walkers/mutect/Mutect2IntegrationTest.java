@@ -274,12 +274,6 @@ public class Mutect2IntegrationTest extends CommandLineProgramTest {
         });
     }
 
-    @Test
-    public void testThing() {
-        final String[] args = "-R gs://bhanu-dev/gatk_bacteria/klebs/Klebsiella_pneumoniae_subsp_pneumoniae_MGH_78578_plasmids.fasta -I gs://bhanu-dev/gatk_bacteria/klebs/frags_RG.bam -O out.vcf -L gi|152973731|ref|NC_009651.1|:17588-18262 --debug-graph-transformations".split(" ");
-        runCommandLine(args);
-    }
-
     // make a pon with a tumor and then use this pon to call somatic variants on the same tumor
     // if the pon is doing its job all calls should be filtered by this pon
     @Test(dataProvider = "dreamSyntheticDataSample1")
